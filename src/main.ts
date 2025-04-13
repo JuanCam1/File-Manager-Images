@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ImageI } from "./model/image-model";
 import { template } from "./lib/libs";
+import { exec } from "node:child_process";
 
 if (started) {
   app.quit();
@@ -28,8 +29,8 @@ const createWindow = () => {
   mainWindow.maximize();
   mainWindow.removeMenu();
 
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+  // const menu = Menu.buildFromTemplate(template);
+  // Menu.setApplicationMenu(menu);
 
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -107,40 +108,78 @@ ipcMain.handle('get-images', async (_: unknown, dirPath: string) => {
 
     processDirectory(dirPath);
 
-    console.log("images", images);
     return images;
-  } catch (error) {
-    console.error('Error al leer las imágenes:', error);
+  } catch (_error) {
     return [];
   }
 });
 
-ipcMain.handle('rename-image', async (_, pathProject: string, newName: string): Promise<boolean> => {
+ipcMain.handle('rename-image', async (_, pathImage: string, newName: string, type: string): Promise<string> => {
   try {
 
-    console.log(pathProject);
-    console.log(newName);
-    const parentDir = path.dirname(pathProject);
-    const newPath = path.join(parentDir, newName);
-    console.log(newPath);
+    const parentDir = path.dirname(pathImage);
+    const newPath = path.join(parentDir, `${newName}.${type}`);
 
     if (fs.existsSync(newPath)) {
-      console.error(`Ya existe una imagen llamado "${newName}".`);
-      return false;
+      return "El archivo ya existe";
     }
 
     return new Promise((resolve) => {
-      fs.rename(pathProject, newPath, (error) => {
+      fs.rename(pathImage, newPath, (error) => {
         if (error) {
-          console.error(`Error al renombrar el proyecto: ${error.message}`);
-          resolve(false);
+          resolve("Error al renombrar el archivo");
         } else {
-          resolve(true);
+          resolve("El archivo se ha renombrado correctamente");
         }
       });
     });
+  } catch (_error) {
+    return "Error al renombrar el archivo";
+  }
+});
+
+ipcMain.handle('open-in-file-explorer', async (_: unknown, imagePath: string) => {
+  try {
+    let command: string;
+
+    switch (process.platform) {
+      case 'win32':
+        command = `explorer "${imagePath}"`;
+        break;
+      case 'darwin':
+        command = `open "${imagePath}"`;
+        break;
+      case 'linux':
+        command = `xdg-open "${imagePath}"`;
+        break;
+      default:
+        return false;
+    }
+
+    exec(command, (error) => {
+      if (error) {
+        console.error(`Error al abrir el explorador de archivos: ${error}`);
+        return false;
+      }
+    });
+
+    return true;
   } catch (error) {
-    console.error(`Error al renombrar el proyecto: ${error}`);
+    console.error('Error al abrir el explorador de archivos:', error);
+    return false;
+  }
+});
+
+ipcMain.handle('delete-image', async (_: unknown, imagePath: string) => {
+  try {
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error('Error al eliminar la imagen:', error);
     return false;
   }
 });

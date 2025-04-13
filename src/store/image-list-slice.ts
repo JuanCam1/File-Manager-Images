@@ -1,4 +1,5 @@
 import type { ImageI } from "@/model/image-model";
+import { toast } from "sonner";
 import type { StateCreator } from "zustand";
 
 export interface ImageSlice {
@@ -10,7 +11,9 @@ export interface ImageSlice {
   loadImages: () => Promise<void>;
   handleSelectDirectory: () => Promise<void>;
   handleRefresh: () => Promise<void>;
-  handleRenameImage: (oldPath: string, newName: string) => Promise<boolean>;
+  handleRenameImage: (oldPath: string, newName: string, type: string) => Promise<string>;
+  openFileExplorer: (imagePath: string) => Promise<boolean>;
+  deleteImage: (imagePath: string) => Promise<boolean>;
 }
 
 export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
@@ -35,8 +38,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
         isLoading: false,
       })
 
-    } catch (error) {
-      console.error('Error al cargar imagenes:', error);
+    } catch (_error) {
       set({
         images: [],
         isLoading: false
@@ -64,7 +66,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
       try {
         get().loadImages();
       } catch (error) {
-        console.error('Error al actualizar proyectos:', error);
+        console.error('Error al actualizar las imagenes:', error);
       } finally {
         setTimeout(() => {
           set({ refreshing: false });
@@ -73,13 +75,54 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
     }
   },
 
-  handleRenameImage: async (oldPath: string, newName: string) => {
-    if (!newName || newName.trim() === '') {
+  handleRenameImage: async (oldPath: string, newName: string, type: string) => {
+    if (!newName || newName.trim() === '' || type.trim() === '') {
+      return "El nombre del archivo no puede estar vacío";
+    }
+
+    try {
+      const success = await window.api.renameImage(oldPath, newName, type);
+
+      if (success === "El archivo se ha renombrado correctamente") {
+        get().loadImages();
+        return "El archivo se ha renombrado correctamente";
+      }
+
+      if (success === "El archivo ya existe") {
+        return "El archivo ya existe";
+      }
+
+      return "Error al renombrar el archivo";
+    } catch (_error) {
+      return "Error al renombrar el archivo";
+    }
+  },
+
+  openFileExplorer: async (imagePath: string) => {
+    if (imagePath.trim() === '') {
       return false;
     }
 
     try {
-      const success = await window.api.renameImage(oldPath, newName);
+      const success = await window.api.openInFileExplorer(imagePath);
+
+      if (success) {
+        return true;
+      }
+
+      return false;
+    } catch (_error) {
+      return false;
+    }
+  },
+
+  deleteImage: async (imagePath: string) => {
+    if (imagePath.trim() === '') {
+      return false;
+    }
+
+    try {
+      const success = await window.api.deleteImage(imagePath);
 
       if (success) {
         get().loadImages();
@@ -87,8 +130,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
       }
 
       return false;
-    } catch (error) {
-      console.error('Error al renombrar el proyecto:', error);
+    } catch (_error) {
       return false;
     }
   },

@@ -9,13 +9,15 @@ import ImageCard from "./image-card";
 import type { ImageI } from "@/model/image-model";
 import ModalView from "@/components/modal-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AlertDialogModal from "./alert-delete";
 
-interface ProjectListProps {
+interface ImageListProps {
   loading: boolean;
 }
-const ImageList: FC<ProjectListProps> = ({ loading }) => {
+const ImageList: FC<ImageListProps> = ({ loading }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isOpenViewModal, setIsOpenViewModal] = useState(false);
+  const [isOpenAlert, setIsOpenAlert] = useState(false);
   const [imageSelected, setImageSelected] = useState<ImageI | null>(null);
   const [value, setValue] = useState("all");
   const images = useImageStore(state => state.images);
@@ -24,6 +26,7 @@ const ImageList: FC<ProjectListProps> = ({ loading }) => {
   const setDebouncedSearchTerm = useImageStore(state => state.setDebouncedSearchTerm);
   const debouncedSearchTerm = useImageStore(state => state.debouncedSearchTerm);
   const handleRenameImage = useImageStore(state => state.handleRenameImage);
+
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -41,21 +44,27 @@ const ImageList: FC<ProjectListProps> = ({ loading }) => {
     );
   }
 
-  const handleSelectImage = (image: ImageI) => {
-    setImageSelected(image);
+  const onOpenModalEdit = () => {
     setIsOpenModal(true);
   };
 
-  const onOpenModalView = (image: ImageI) => {
+  const handleSelectImage = (image: ImageI) => {
     setImageSelected(image);
+  };
+
+  const onOpenModalView = () => {
     setIsOpenViewModal(true);
   };
+
+  const onOpenDeleteImage = () => {
+    return setIsOpenAlert(true);
+  }
 
 
   return (
 
     <div className="flex flex-col">
-      <div className="flex justify-between items-center gap-4 my-4">
+      <div className="flex justify-between items-center gap-4 my-4 ml-2">
         <Input
           placeholder="Bucar imagen..."
           value={searchTerm}
@@ -64,10 +73,10 @@ const ImageList: FC<ProjectListProps> = ({ loading }) => {
         />
         <Tabs defaultValue={value} onValueChange={setValue}>
           <TabsList className="grid grid-cols-4 dark:bg-zinc-800 w-full">
-            <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="jpg">JPG</TabsTrigger>
-            <TabsTrigger value="png">PNG</TabsTrigger>
-            <TabsTrigger value="webp">WEBP</TabsTrigger>
+            <TabsTrigger value="all" >Todas</TabsTrigger>
+            <TabsTrigger value="jpg" >JPG</TabsTrigger>
+            <TabsTrigger value="png" >PNG</TabsTrigger>
+            <TabsTrigger value="webp" >WEBP</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -77,24 +86,34 @@ const ImageList: FC<ProjectListProps> = ({ loading }) => {
           <ImageCard
             images={filteredImages}
             handleSelectImage={handleSelectImage}
-            onOpenModalView={onOpenModalView} />
+            onOpenModalView={onOpenModalView}
+            onOpenModalEdit={onOpenModalEdit}
+            onOpenDeleteImage={onOpenDeleteImage}
+          />
         </TabsContent>
         <TabsContent value="jpg" className="mt-0 pt-2 border dark:border-zinc-600 rounded-md h-[500px] overflow-y-scroll scrollbar scrollbar-thumb-zinc-400 scrollbar-track-zinc-300 dark:scrollbar-thumb-zinc-950 dark:scrollbar-track-zinc-800">
           <ImageCard
             images={filteredImages.filter((img) => img.type === "jpg" || img.type === "jpeg")}
             handleSelectImage={handleSelectImage}
-            onOpenModalView={onOpenModalView} />
+            onOpenModalView={onOpenModalView}
+            onOpenModalEdit={onOpenModalEdit}
+            onOpenDeleteImage={onOpenDeleteImage} />
         </TabsContent>
         <TabsContent value="png" className="mt-0 pt-2 border dark:border-zinc-600 rounded-md h-[500px] overflow-y-scroll scrollbar scrollbar-thumb-zinc-400 scrollbar-track-zinc-300 dark:scrollbar-thumb-zinc-950 dark:scrollbar-track-zinc-800">
           <ImageCard
             images={filteredImages.filter((img) => img.type === "png")}
             handleSelectImage={handleSelectImage}
-            onOpenModalView={onOpenModalView} />
+            onOpenModalView={onOpenModalView}
+            onOpenModalEdit={onOpenModalEdit}
+            onOpenDeleteImage={onOpenDeleteImage} />
         </TabsContent>
-        <TabsContent value="webp" className="mt-0 pt-2 border dark:border-zinc-600 rounded-md h-[500px] overflow-y-scroll scrollbar scrollbar-thumb-zinc-400 scrollbar-track-zinc-300 dark:scrollbar-thumb-zinc-950 dark:scrollbar-track-zinc-800">            <ImageCard
-          images={filteredImages.filter((img) => img.type === "webp")}
-          handleSelectImage={handleSelectImage}
-          onOpenModalView={onOpenModalView} />
+        <TabsContent value="webp" className="mt-0 pt-2 border dark:border-zinc-600 rounded-md h-[500px] overflow-y-scroll scrollbar scrollbar-thumb-zinc-400 scrollbar-track-zinc-300 dark:scrollbar-thumb-zinc-950 dark:scrollbar-track-zinc-800">
+          <ImageCard
+            images={filteredImages.filter((img) => img.type === "webp")}
+            handleSelectImage={handleSelectImage}
+            onOpenModalView={onOpenModalView}
+            onOpenModalEdit={onOpenModalEdit}
+            onOpenDeleteImage={onOpenDeleteImage} />
         </TabsContent>
       </Tabs>
 
@@ -118,6 +137,12 @@ const ImageList: FC<ProjectListProps> = ({ loading }) => {
             imageSelected={imageSelected} />
         )
       }
+
+      <AlertDialogModal
+        open={isOpenAlert}
+        onChangeOpen={setIsOpenAlert}
+        image={imageSelected}
+      />
     </div>
   );
 };

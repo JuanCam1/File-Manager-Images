@@ -13,7 +13,7 @@ const ModalView: FC<Props> = ({ open, onChangeOpen, imageSelected }) => {
     <Dialog open={open} onOpenChange={onChangeOpen}>
       <DialogContent className="dark:bg-zinc-900">
         <DialogHeader>
-          <DialogTitle className="dark:text-white">Editar el nombre del proyecto</DialogTitle>
+          <DialogTitle className="dark:text-white">{imageSelected.name}</DialogTitle>
         </DialogHeader>
         <div className="pb-2">
           <img src={pathImage} alt={imageSelected.name} className="h-full" />

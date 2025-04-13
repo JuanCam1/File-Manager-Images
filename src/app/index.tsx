@@ -1,12 +1,6 @@
+import { useEffect } from "react"
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef, useEffect } from "react"
-import { ImageIcon, Search, Upload, Trash2, Edit2 } from "lucide-react"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
 import { useImageStore } from "@/store";
 import Header from "@/sections/header";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +18,7 @@ function Index() {
   const currentPath = useImageStore(state => state.currentPath);
   const loading = useImageStore(state => state.isLoading);
   const refreshing = useImageStore(state => state.refreshing);
+  const openFileExplorer = useImageStore(state => state.openFileExplorer);
 
   useEffect(() => {
     loadImages();
@@ -36,6 +31,7 @@ function Index() {
         onRefresh={handleRefresh}
         currentPath={currentPath}
         canRefresh={!!currentPath && !loading}
+        openFileExplorer={openFileExplorer}
       />
       <Separator />
       <div className="flex-1 pt-3 rounded-sm overflow-hidden">

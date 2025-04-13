@@ -1,13 +1,15 @@
-import { useState, type FC } from "react";
+import type { FC } from "react";
 import type { ImageI } from "@/model/image-model";
 import ImageItem from "./image-item";
 
 interface Props {
   images: ImageI[];
   handleSelectImage: (image: ImageI) => void;
-  onOpenModalView: (image: ImageI) => void;
+  onOpenModalView: () => void;
+  onOpenModalEdit: () => void;
+  onOpenDeleteImage: () => void;
 }
-const ImageCard: FC<Props> = ({ images, handleSelectImage, onOpenModalView }) => {
+const ImageCard: FC<Props> = ({ images, handleSelectImage, onOpenModalView, onOpenModalEdit, onOpenDeleteImage }) => {
 
   return (
     <>
@@ -18,6 +20,8 @@ const ImageCard: FC<Props> = ({ images, handleSelectImage, onOpenModalView }) =>
             image={image}
             handleSelectImage={handleSelectImage}
             onOpenModalView={onOpenModalView}
+            onOpenModalEdit={onOpenModalEdit}
+            onOpenDeleteImage={onOpenDeleteImage}
           />
         ))}
       </div>

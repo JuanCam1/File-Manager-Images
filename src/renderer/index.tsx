@@ -11,6 +11,6 @@ const root = createRoot(idRoot);
 root.render(
   <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
     <App />
-    <Toaster />
+    <Toaster richColors duration={2000} />
   </ThemeProvider>
 );
