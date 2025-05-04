@@ -9,11 +9,16 @@ interface Props {
   onOpenModalEdit: () => void;
   onOpenDeleteImage: () => void;
 }
-const ImageCard: FC<Props> = ({ images, handleSelectImage, onOpenModalView, onOpenModalEdit, onOpenDeleteImage }) => {
-
+const ImageCard: FC<Props> = ({
+  images,
+  handleSelectImage,
+  onOpenModalView,
+  onOpenModalEdit,
+  onOpenDeleteImage,
+}) => {
   return (
     <>
-      <div className="gap-4 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 p-4">
+      <div className="gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-4">
         {images.map((image) => (
           <ImageItem
             key={image.path}
@@ -25,9 +30,7 @@ const ImageCard: FC<Props> = ({ images, handleSelectImage, onOpenModalView, onOp
           />
         ))}
       </div>
-
-
     </>
-  )
-}
-export default ImageCard
+  );
+};
+export default ImageCard;

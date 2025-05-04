@@ -1,5 +1,4 @@
 import type { ImageI } from "@/model/image-model";
-import { toast } from "sonner";
 import type { StateCreator } from "zustand";
 
 export interface ImageSlice {
@@ -10,17 +9,32 @@ export interface ImageSlice {
 
   loadImages: () => Promise<void>;
   handleSelectDirectory: () => Promise<void>;
+  initPlatformPath: () => Promise<void>;
   handleRefresh: () => Promise<void>;
-  handleRenameImage: (oldPath: string, newName: string, type: string) => Promise<string>;
+  handleRenameImage: (
+    oldPath: string,
+    newName: string,
+    type: string,
+  ) => Promise<string>;
   openFileExplorer: (imagePath: string) => Promise<boolean>;
   deleteImage: (imagePath: string) => Promise<boolean>;
 }
 
 export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
-  currentPath: "C:\\Users\\jkl3_\\Pictures",
+  currentPath: null,
   images: [],
   isLoading: false,
   refreshing: false,
+
+  initPlatformPath: async () => {
+    try {
+      const platformPath = await window.api.platform();
+      console.log(platformPath);
+      set({ currentPath: platformPath });
+    } catch (error) {
+      console.error("Error al obtener la plataforma:", error);
+    }
+  },
 
   loadImages: async () => {
     const currentPath = get().currentPath;
@@ -36,15 +50,13 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
       set({
         images: imagesList,
         isLoading: false,
-      })
-
+      });
     } catch (_error) {
       set({
         images: [],
-        isLoading: false
+        isLoading: false,
       });
     }
-
   },
 
   handleSelectDirectory: async () => {
@@ -55,7 +67,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
         get().loadImages();
       }
     } catch (error) {
-      console.error('Error al seleccionar directorio:', error);
+      console.error("Error al seleccionar directorio:", error);
     }
   },
 
@@ -66,7 +78,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
       try {
         get().loadImages();
       } catch (error) {
-        console.error('Error al actualizar las imagenes:', error);
+        console.error("Error al actualizar las imagenes:", error);
       } finally {
         setTimeout(() => {
           set({ refreshing: false });
@@ -76,7 +88,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
   },
 
   handleRenameImage: async (oldPath: string, newName: string, type: string) => {
-    if (!newName || newName.trim() === '' || type.trim() === '') {
+    if (!newName || newName.trim() === "" || type.trim() === "") {
       return "El nombre del archivo no puede estar vacío";
     }
 
@@ -99,7 +111,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
   },
 
   openFileExplorer: async (imagePath: string) => {
-    if (imagePath.trim() === '') {
+    if (imagePath.trim() === "") {
       return false;
     }
 
@@ -117,7 +129,7 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
   },
 
   deleteImage: async (imagePath: string) => {
-    if (imagePath.trim() === '') {
+    if (imagePath.trim() === "") {
       return false;
     }
 
@@ -135,5 +147,3 @@ export const createImageSListlice: StateCreator<ImageSlice> = (set, get) => ({
     }
   },
 });
-
-

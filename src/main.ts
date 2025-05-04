@@ -6,16 +6,17 @@ import path from "node:path";
 import type { ImageI } from "./model/image-model";
 import { template } from "./lib/libs";
 import { exec } from "node:child_process";
+import { platform } from "node:process";
 
 if (started) {
   app.quit();
 }
 
-let mainWindow: BrowserWindow
+let mainWindow: BrowserWindow;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    title: "File Manager Images",
+    title: "ImageDeck",
     minHeight: 600,
     minWidth: 500,
     frame: true,
@@ -32,7 +33,6 @@ const createWindow = () => {
   // const menu = Menu.buildFromTemplate(template);
   // Menu.setApplicationMenu(menu);
 
-
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: "deny" };
@@ -42,18 +42,16 @@ const createWindow = () => {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
 
-  // mainWindow.webContents.openDevTools({
-  //   mode: "detach",
-  // });
+  mainWindow.webContents.openDevTools({
+    mode: "detach",
+  });
 };
 
-
 app.on("ready", createWindow);
-
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -67,9 +65,9 @@ app.on("activate", () => {
   }
 });
 
-ipcMain.handle('select-directory', async () => {
+ipcMain.handle("select-directory", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
+    properties: ["openDirectory"],
   });
 
   if (!result.canceled) {
@@ -79,13 +77,22 @@ ipcMain.handle('select-directory', async () => {
 });
 
 function isImage(filePath: string) {
-  const imageExtensions = ['.webp', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.tiff', '.ico'];
+  const imageExtensions = [
+    ".webp",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".svg",
+    ".tiff",
+    ".ico",
+  ];
   const ext = path.extname(filePath).toLowerCase();
   return imageExtensions.includes(ext);
 }
 
-
-ipcMain.handle('get-images', async (_: unknown, dirPath: string) => {
+ipcMain.handle("get-images", async (_: unknown, dirPath: string) => {
   try {
     const images: ImageI[] = [];
     const processDirectory = (directory: string) => {
@@ -100,7 +107,7 @@ ipcMain.handle('get-images', async (_: unknown, dirPath: string) => {
           images.push({
             name: entry.name,
             path: entryPath,
-            type: path.extname(entry.name).substring(1).toLowerCase()
+            type: path.extname(entry.name).substring(1).toLowerCase(),
           });
         }
       }
@@ -114,63 +121,73 @@ ipcMain.handle('get-images', async (_: unknown, dirPath: string) => {
   }
 });
 
-ipcMain.handle('rename-image', async (_, pathImage: string, newName: string, type: string): Promise<string> => {
-  try {
+ipcMain.handle(
+  "rename-image",
+  async (
+    _,
+    pathImage: string,
+    newName: string,
+    type: string,
+  ): Promise<string> => {
+    try {
+      const parentDir = path.dirname(pathImage);
+      const newPath = path.join(parentDir, `${newName}.${type}`);
 
-    const parentDir = path.dirname(pathImage);
-    const newPath = path.join(parentDir, `${newName}.${type}`);
+      if (fs.existsSync(newPath)) {
+        return "El archivo ya existe";
+      }
 
-    if (fs.existsSync(newPath)) {
-      return "El archivo ya existe";
+      return new Promise((resolve) => {
+        fs.rename(pathImage, newPath, (error) => {
+          if (error) {
+            resolve("Error al renombrar el archivo");
+          } else {
+            resolve("El archivo se ha renombrado correctamente");
+          }
+        });
+      });
+    } catch (_error) {
+      return "Error al renombrar el archivo";
     }
+  },
+);
 
-    return new Promise((resolve) => {
-      fs.rename(pathImage, newPath, (error) => {
+ipcMain.handle(
+  "open-in-file-explorer",
+  async (_: unknown, imagePath: string) => {
+    try {
+      let command: string;
+
+      switch (process.platform) {
+        case "win32":
+          command = `explorer "${imagePath}"`;
+          break;
+        case "darwin":
+          command = `open "${imagePath}"`;
+          break;
+        case "linux":
+          command = `xdg-open "${imagePath}"`;
+          break;
+        default:
+          return false;
+      }
+
+      exec(command, (error) => {
         if (error) {
-          resolve("Error al renombrar el archivo");
-        } else {
-          resolve("El archivo se ha renombrado correctamente");
+          console.error(`Error al abrir el explorador de archivos: ${error}`);
+          return false;
         }
       });
-    });
-  } catch (_error) {
-    return "Error al renombrar el archivo";
-  }
-});
 
-ipcMain.handle('open-in-file-explorer', async (_: unknown, imagePath: string) => {
-  try {
-    let command: string;
-
-    switch (process.platform) {
-      case 'win32':
-        command = `explorer "${imagePath}"`;
-        break;
-      case 'darwin':
-        command = `open "${imagePath}"`;
-        break;
-      case 'linux':
-        command = `xdg-open "${imagePath}"`;
-        break;
-      default:
-        return false;
+      return true;
+    } catch (error) {
+      console.error("Error al abrir el explorador de archivos:", error);
+      return false;
     }
+  },
+);
 
-    exec(command, (error) => {
-      if (error) {
-        console.error(`Error al abrir el explorador de archivos: ${error}`);
-        return false;
-      }
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error al abrir el explorador de archivos:', error);
-    return false;
-  }
-});
-
-ipcMain.handle('delete-image', async (_: unknown, imagePath: string) => {
+ipcMain.handle("delete-image", async (_: unknown, imagePath: string) => {
   try {
     if (fs.existsSync(imagePath)) {
       fs.unlinkSync(imagePath);
@@ -179,7 +196,19 @@ ipcMain.handle('delete-image', async (_: unknown, imagePath: string) => {
       return false;
     }
   } catch (error) {
-    console.error('Error al eliminar la imagen:', error);
+    console.error("Error al eliminar la imagen:", error);
     return false;
+  }
+});
+
+ipcMain.handle("platform", async () => {
+  const pathWind = "C:\\Users\\jkl3_\\Pictures";
+  const pathLinux = "/home/juanc/Imágenes";
+  try {
+    const type = platform === "win32" ? pathWind : pathLinux;
+    return type;
+  } catch (error) {
+    console.log("Error", error);
+    return pathLinux;
   }
 });

@@ -8,6 +8,7 @@ declare global {
       renameImage: (oldPath: string, newPath: string, type: string) => Promise<string>;
       openInFileExplorer: (imagePath: string) => Promise<boolean>;
       deleteImage: (imagePath: string) => Promise<boolean>;
+      platform:() => Promise<string>;
     };
   }
 }
