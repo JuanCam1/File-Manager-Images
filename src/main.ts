@@ -16,6 +16,7 @@ let mainWindow: BrowserWindow;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
+    icon: "../images/logo.png",
     title: "ImageDeck",
     minHeight: 600,
     minWidth: 500,
@@ -31,12 +32,12 @@ const createWindow = () => {
   mainWindow.removeMenu();
 
   // const menu = Menu.buildFromTemplate(template);
-  // Menu.setApplicationMenu(menu);
+  Menu.setApplicationMenu(null);
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: "deny" };
-  });
+  // mainWindow.webContents.setWindowOpenHandler((details) => {
+  //   shell.openExternal(details.url);
+  //   return { action: "deny" };
+  // });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -46,9 +47,9 @@ const createWindow = () => {
     );
   }
 
-  mainWindow.webContents.openDevTools({
-    mode: "detach",
-  });
+  // mainWindow.webContents.openDevTools({
+  //   mode: "detach",
+  // });
 };
 
 app.on("ready", createWindow);
